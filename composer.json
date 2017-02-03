@@ -1,6 +1,6 @@
 {
-    "name": "netglue/zend-view-mail-template",
-    "description": "A module(?) that provides a way of easily configuring and sending email messages using Zend\\View for templates.",
+    "name": "netglue/zend-expressive-mail-template",
+    "description": "A module(?) that provides a way of easily configuring and sending email messages using existing templating engines available in Zend Expressive.",
     "type": "library",
     "keywords": [
         "zend",
@@ -12,7 +12,15 @@
     ],
     "homepage": "https://github.com/netglue/Zend-View-Mail-Template",
     "require": {
-        "zendframework/zend-mail": "^2.7"
+        "php" : "^7.0",
+        "zendframework/zend-mail": "^2.7",
+        "zendframework/zend-eventmanager": "^2.6.2 || ^3.0"
+    },
+    "require-dev" : {
+        "phpunit/phpunit" : "^5.0",
+        "zendframework/zend-expressive-zendviewrenderer": "^1.2",
+        "zendframework/zend-escaper": "^2.5",
+        "mtymek/expressive-config-manager": "^0.4.0"
     },
     "license": "MIT",
     "authors": [
@@ -20,5 +28,18 @@
             "name": "George Steel",
             "email": "george@net-glue.co.uk"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-4": {
+            "NetglueMail\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NetglueMailTest\\": "test/NetglueMailTest"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
 }

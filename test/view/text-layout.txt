@@ -1,0 +1,3 @@
+[Text Layout Start]
+<?php echo $this->content; ?>
+[Text Layout End]
