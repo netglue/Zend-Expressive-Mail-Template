@@ -10,7 +10,7 @@
         "mail",
         "template"
     ],
-    "homepage": "https://github.com/netglue/Zend-View-Mail-Template",
+    "homepage": "https://github.com/netglue/Zend-Expressive-Mail-Template",
     "require": {
         "php" : "^7.0",
         "zendframework/zend-mail": "^2.7",

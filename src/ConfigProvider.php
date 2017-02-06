@@ -1,6 +1,7 @@
 <?php
 
 namespace NetglueMail;
+use Zend\Expressive\Template\TemplateRendererInterface;
 
 class ConfigProvider
 {
@@ -18,6 +19,9 @@ class ConfigProvider
                 Dispatcher::class      => Factory\DispatcherFactory::class,
                 ModuleOptions::class   => Factory\ModuleOptionsFactory::class,
                 TemplateService::class => Factory\TemplateServiceFactory::class,
+            ],
+            'aliases' => [
+                'NetglueMail\TemplateRendererInterface' => TemplateRendererInterface::class,
             ],
         ];
     }

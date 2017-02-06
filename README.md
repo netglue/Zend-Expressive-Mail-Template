@@ -14,6 +14,8 @@ This lib is a bit thrown together to scratch a simple itch and should be conside
 
 ## Configure
 
+### Mail Transport
+
 Configuration should be placed under the key `netglue_mail`. The first thing to do is make sure that you've got a factory setup to return a Mail Transport that `Zend\Mail` can use. So, let's say you've got a transport setup in your DI container with the name `Zend\Mail\Transport\TransportInterface`, you'll need to provide this name in config thus:
 
     // …
@@ -23,6 +25,8 @@ Configuration should be placed under the key `netglue_mail`. The first thing to 
     // …
 
 If no transport is provided, the lib will automatically construct an `InMemory` transport and all your mail will be delivered there, which is probably not what you want…
+
+### Template Rendering
 
 Next, you'll need to setup configuration for each type of message you want to send. At the very least, you'll need to provide a template for the "Message Type". This should either an HTML based template in the key `template` or a plain text template in the key `textTemplate`, or both for a multipart message. Clearly, you'll also need to setup your template resolver to know where to find these template names:
     
@@ -42,6 +46,17 @@ Next, you'll need to setup configuration for each type of message you want to se
             'email::some-html' => __DIR__ . '/tmpl/mail/some-file.html',
             'email::some-text' => __DIR__ . '/tmpl/mail/some-text.txt',
         ],
+    ],
+
+The factory that puts together the Template Rendering 'Service' will look in the DI container for a rendering engine under the key `'NetglueMail\TemplateRendererInterface'` - this service name is aliased to `Zend\Expressive\Template\TemplateRendererInterface`, so, theoretically, as long as you are pulling in the Dependency Config from the `ConfigProvider` the template renderer will work out of the box _and_ if you want to provide a different renderer for mail than whatever your app is using, all you have to do is override this alias in your dependency config with something along the lines of this:
+    
+    'dependencies' => [
+        'aliases' => [
+            'NetglueMail\TemplateRendererInterface' => Some\Other\Renderer::class,
+        ],
+        'factories' => [
+            Some\Other\Renderer::class => Some\Other\RendererFacotry::class,
+        ],  
     ],
 
 There's a whole load of other stuff you can configure each individual message with along with global defaults. 
@@ -128,3 +143,6 @@ You can also construct the message first from defaults and runtime options and t
 
 Test coverage is pretty good using Zend\View as the template engine, but I haven't had the time to test with Twig or Plates etc. YMMV.
 
+## About
+
+[Netglue makes web based stuff in Devon, England](https://netglue.uk). We hope this is useful to you and we’d appreciate feedback either way :)
