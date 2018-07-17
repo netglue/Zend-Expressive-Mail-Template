@@ -1,9 +1,13 @@
 <?php
+declare(strict_types=1);
 
 namespace NetglueMailTest;
 
+use NetglueMail\Factory\DispatcherFactory;
+use NetglueMail\ModuleOptions;
 use NetglueMail\TemplateService;
 use NetglueMail\Dispatcher;
+use Psr\Container\ContainerInterface;
 use Zend\View\Renderer\PhpRenderer;
 use Zend\View\Model\ViewModel;
 use Zend\Mail\Transport\InMemory;
@@ -18,54 +22,24 @@ class DispatcherTest extends TestCase
 
     public function getTemplateService()
     {
-        return self::$container->get(TemplateService::class);
     }
 
-    public function testDispatcherCanBeRetrievedFromContainer()
+    public function testFactory()
     {
-        $dispatcher = self::$container->get(Dispatcher::class);
+        $container = $this->prophesize(ContainerInterface::class);
+        $templates = $this->prophesize(TemplateService::class);
+        $container->get(ModuleOptions::class)->willReturn(new ModuleOptions([]));
+        $container->get(TemplateService::class)->willReturn($templates->reveal());
 
+        $factory = new DispatcherFactory();
+        $dispatcher = ($factory)($container->reveal());
         $this->assertInstanceOf(Dispatcher::class, $dispatcher);
-        $this->assertInstanceOf(TemplateService::class, $dispatcher->getTemplateService());
-        $this->assertInstanceOf(InMemory::class, $dispatcher->getTransport());
 
         return $dispatcher;
     }
 
     /**
-     * @depends testDispatcherCanBeRetrievedFromContainer
-     */
-    public function testTransportCanBeOverridden(Dispatcher $dispatcher)
-    {
-        $old = $dispatcher->getTransport();
-        $new = new InMemory;
-        $dispatcher->setTransport($new);
-        $this->assertSame($new, $dispatcher->getTransport());
-        return $dispatcher;
-    }
-
-    public function testAddressList()
-    {
-        $list = array(
-            'fred@example.com' => 'Fred',
-            'jane@example.com',
-        );
-
-        $addressList = new AddressList;
-        $addressList->addMany($list);
-        $this->assertTrue($addressList->has('fred@example.com'));
-        $this->assertTrue($addressList->has('jane@example.com'));
-
-        $email = 'Bill <bill@example.com>';
-        $addressList->addFromString($email);
-        $this->assertTrue($addressList->has('bill@example.com'));
-
-        $email = 'jim@example.com';
-        $addressList->addFromString($email);
-        $this->assertTrue($addressList->has('jim@example.com'));
-    }
-
-    /**
+     *
      * @depends testDispatcherCanBeRetrievedFromContainer
      */
     public function testCreateMessageReturnsExpectedMessage(Dispatcher $dispatcher)
@@ -103,10 +77,10 @@ class DispatcherTest extends TestCase
         $address = $msg->getSender();
         $this->assertSame('sender@example.com', $address->getEmail());
         $this->assertSame('I Sent This', $address->getName());
-
     }
 
     /**
+     *
      * @depends testDispatcherCanBeRetrievedFromContainer
      */
     public function testSendMessage(Dispatcher $dispatcher)
@@ -118,6 +92,7 @@ class DispatcherTest extends TestCase
     }
 
     /**
+     *
      * @depends testDispatcherCanBeRetrievedFromContainer
      */
     public function testViewVariablesInMessages(Dispatcher $dispatcher)
@@ -132,17 +107,22 @@ class DispatcherTest extends TestCase
     }
 
     /**
+     *
      * @depends testDispatcherCanBeRetrievedFromContainer
      */
     public function testAttachments(Dispatcher $dispatcher)
     {
         $transport = $dispatcher->getTransport();
-        $dispatcher->send('viewVariables', [
-            'attachments' => array(
+        $dispatcher->send(
+            'viewVariables',
+            [
+            'attachments' => [
                 'TextFile.txt' => __DIR__ . '/../view/attachment.txt',
-            )], [
+            ]],
+            [
                 'test' => 'This is a test',
-            ]);
+            ]
+        );
         $message = $transport->getLastMessage();
         $body = $message->getBody();
         $parts = $body->getParts();
@@ -152,6 +132,7 @@ class DispatcherTest extends TestCase
     }
 
     /**
+     *
      * @depends testDispatcherCanBeRetrievedFromContainer
      */
     public function testSendEventsAreTriggered(Dispatcher $dispatcher)
@@ -178,6 +159,7 @@ class DispatcherTest extends TestCase
     }
 
     /**
+     *
      * @depends testDispatcherCanBeRetrievedFromContainer
      */
     public function testViewModelIsAcceptable(Dispatcher $dispatcher)
@@ -193,6 +175,7 @@ class DispatcherTest extends TestCase
     }
 
     /**
+     *
      * @depends testDispatcherCanBeRetrievedFromContainer
      */
     public function testDefaultSenderIsSet(Dispatcher $dispatcher)
@@ -204,6 +187,7 @@ class DispatcherTest extends TestCase
     }
 
     /**
+     *
      * @depends testDispatcherCanBeRetrievedFromContainer
      */
     public function testDefaultSenderDoesNotOverrideFrom(Dispatcher $dispatcher)

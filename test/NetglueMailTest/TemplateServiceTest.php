@@ -2,25 +2,32 @@
 
 namespace NetglueMailTest;
 
+use NetglueMail\Factory\TemplateServiceFactory;
+use NetglueMail\MailTemplateRendererInterface;
 use NetglueMail\TemplateService;
 use NetglueMail\ModuleOptions;
+use Psr\Container\ContainerInterface;
+use Zend\Expressive\Template\TemplateRendererInterface;
 use Zend\Expressive\ZendView\ZendViewRenderer;
 
 class TemplateServiceTest extends TestCase
 {
 
-    public function testTemplateServiceCanBeRetrievedFromContainer()
+    public function testFactory()
     {
-        $service = self::$container->get(TemplateService::class);
+        $container = $this->prophesize(ContainerInterface::class);
+        $container->get(ModuleOptions::class)->willReturn(new ModuleOptions());
+        $renderer = $this->prophesize(TemplateRendererInterface::class);
+        $container->get(MailTemplateRendererInterface::class)->willReturn($renderer->reveal());
+
+        $factory = new TemplateServiceFactory();
+        $service = ($factory)($container->reveal());
 
         $this->assertInstanceOf(TemplateService::class, $service);
-        $this->assertInstanceOf(ModuleOptions::class, $service->getOptions());
-        $this->assertInstanceOf(ZendViewRenderer::class, $service->getRenderer());
-
-        return $service;
     }
 
     /**
+     *
      * @depends testTemplateServiceCanBeRetrievedFromContainer
      */
     public function testGetTemplateByName(TemplateService $service)
@@ -33,6 +40,7 @@ class TemplateServiceTest extends TestCase
     }
 
     /**
+     *
      * @depends testTemplateServiceCanBeRetrievedFromContainer
      */
     public function testGetTextTemplateByName(TemplateService $service)
@@ -45,6 +53,7 @@ class TemplateServiceTest extends TestCase
     }
 
     /**
+     *
      * @depends testGetTemplateByName
      */
     public function testRenderTemplate(TemplateService $service)
@@ -55,6 +64,7 @@ class TemplateServiceTest extends TestCase
     }
 
     /**
+     *
      * @depends testGetTextTemplateByName
      */
     public function testRenderTextTemplate(TemplateService $service)
@@ -65,6 +75,7 @@ class TemplateServiceTest extends TestCase
     }
 
     /**
+     *
      * @depends testGetTemplateByName
      */
     public function testRenderTemplateReturnsNullForNullTemplate(TemplateService $service)
@@ -73,6 +84,7 @@ class TemplateServiceTest extends TestCase
     }
 
     /**
+     *
      * @depends testGetTemplateByName
      */
     public function testRenderTextTemplateReturnsNullForNullTemplate(TemplateService $service)
@@ -81,6 +93,7 @@ class TemplateServiceTest extends TestCase
     }
 
     /**
+     *
      * @depends testGetTemplateByName
      */
     public function testRenderLayout(TemplateService $service)
@@ -92,6 +105,7 @@ class TemplateServiceTest extends TestCase
     }
 
     /**
+     *
      * @depends testGetTextTemplateByName
      */
     public function testRenderTextLayout(TemplateService $service)
