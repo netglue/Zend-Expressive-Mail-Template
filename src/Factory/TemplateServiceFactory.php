@@ -1,25 +1,20 @@
 <?php
+declare(strict_types=1);
 
 namespace NetglueMail\Factory;
 
+use NetglueMail\MailTemplateRendererInterface;
 use NetglueMail\TemplateService;
 use NetglueMail\ModuleOptions;
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
 
 class TemplateServiceFactory
 {
-
-    public function __invoke(ContainerInterface $container, $requestedName, array $options = null) : TemplateService
+    public function __invoke(ContainerInterface $container) : TemplateService
     {
-
-        $options  = $container->get(ModuleOptions::class);
-
-        /**
-         * Use an alias to get the template renderer interface so that it's easier to
-         * swap out if you want to use a different engine for mail vs web.
-         */
-        $renderer = $container->get('NetglueMail\TemplateRendererInterface');
-
-        return new TemplateService($options, $renderer);
+        return new TemplateService(
+            $container->get(ModuleOptions::class),
+            $container->get(MailTemplateRendererInterface::class)
+        );
     }
 }

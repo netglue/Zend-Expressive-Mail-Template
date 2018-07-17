@@ -1,19 +1,22 @@
 <?php
+declare(strict_types=1);
 
 namespace NetglueMail\Factory;
 
-use Interop\Container\ContainerInterface;
 use NetglueMail\Dispatcher;
-use NetglueMail\TemplateService;
 use NetglueMail\ModuleOptions;
+use NetglueMail\TemplateService;
+use Psr\Container\ContainerInterface;
 use Zend\Mail\Transport\InMemory;
 
 class DispatcherFactory
 {
-
-    public function __invoke(ContainerInterface $container, $requestedName, array $options = null) : Dispatcher
+    public function __invoke(ContainerInterface $container) : Dispatcher
     {
-        $templateService = $container->get(TemplateService::class);
+        /**
+         *
+ * @var ModuleOptions $options
+*/
         $options         = $container->get(ModuleOptions::class);
         $transportName   = $options->getTransport();
 
@@ -21,6 +24,10 @@ class DispatcherFactory
             new InMemory :
             $container->get($transportName);
 
-        return new Dispatcher($transport, $templateService);
+        return new Dispatcher(
+            $transport,
+            $container->get(TemplateService::class),
+            $options
+        );
     }
 }

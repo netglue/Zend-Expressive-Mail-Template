@@ -1,15 +1,15 @@
 <?php
+declare(strict_types=1);
 
 namespace NetglueMail\Factory;
-use Interop\Container\ContainerInterface;
+
 use NetglueMail\ModuleOptions;
+use Psr\Container\ContainerInterface;
 
 class ModuleOptionsFactory
 {
-    public function __invoke(ContainerInterface $container, $requestedName, array $options = null) : ModuleOptions
+    public function __invoke(ContainerInterface $container) : ModuleOptions
     {
-        $config = $container->get('config');
-        $config = isset($config['netglue_mail']) ? $config['netglue_mail'] : [];
-        return new ModuleOptions($config);
+        return new ModuleOptions($container->get('config')['netglue_mail']);
     }
 }
