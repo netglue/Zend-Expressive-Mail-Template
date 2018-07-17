@@ -1,18 +1,21 @@
 <?php
+declare(strict_types=1);
 
 namespace NetglueMail;
+
 use Zend\Expressive\Template\TemplateRendererInterface;
 
 class ConfigProvider
 {
-    public function __invoke()
+    public function __invoke() : array
     {
         return [
             'dependencies' => $this->getDependencyConfig(),
+            'netglue_mail' => $this->getModuleOptions(),
         ];
     }
 
-    public function getDependencyConfig()
+    public function getDependencyConfig() : array
     {
         return [
             'factories' => [
@@ -21,8 +24,16 @@ class ConfigProvider
                 TemplateService::class => Factory\TemplateServiceFactory::class,
             ],
             'aliases' => [
-                'NetglueMail\TemplateRendererInterface' => TemplateRendererInterface::class,
+                MailTemplateRendererInterface::class => TemplateRendererInterface::class,
             ],
+        ];
+    }
+
+    public function getModuleOptions() : array
+    {
+        return [
+            'defaultHeaders' => [],
+            'messages' => [],
         ];
     }
 }
