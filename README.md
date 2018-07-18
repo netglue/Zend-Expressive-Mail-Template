@@ -48,14 +48,14 @@ Next, you'll need to setup configuration for each type of message you want to se
         ],
     ],
 
-The factory that puts together the Template Rendering 'Service' will look in the DI container for a rendering engine under the key `'NetglueMail\TemplateRendererInterface'` - this service name is aliased to `Zend\Expressive\Template\TemplateRendererInterface`, so, theoretically, as long as you are pulling in the Dependency Config from the `ConfigProvider` the template renderer will work out of the box _and_ if you want to provide a different renderer for mail than whatever your app is using, all you have to do is override this alias in your dependency config with something along the lines of this:
+The factory that puts together the Template Rendering 'Service' will look in the DI container for a rendering engine under the key `NetglueMail\MailTemplateRendererInterface::class` - this service name is aliased to `Zend\Expressive\Template\TemplateRendererInterface::class`, so, theoretically, as long as you are pulling in the Dependency Config from the `ConfigProvider` the template renderer will work out of the box _and_ if you want to provide a different renderer for mail than whatever your app is using, all you have to do is override this alias in your dependency config with something along the lines of this:
     
     'dependencies' => [
         'aliases' => [
-            'NetglueMail\TemplateRendererInterface' => Some\Other\Renderer::class,
+            NetglueMail\MailTemplateRendererInterface::class => Some\Other\Renderer::class,
         ],
         'factories' => [
-            Some\Other\Renderer::class => Some\Other\RendererFacotry::class,
+            Some\Other\Renderer::class => Some\Other\RendererFactory::class,
         ],  
     ],
 

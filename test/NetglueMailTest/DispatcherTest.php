@@ -123,6 +123,7 @@ class DispatcherTest extends TestCase
         $this->assertCount(2, $parts);
         $file = end($parts);
         $this->assertContains('Attachment Content', base64_decode($file->getContent()));
+        $this->assertSame('text/plain', $file->getType());
     }
 
     public function testSendEventsAreTriggered()
