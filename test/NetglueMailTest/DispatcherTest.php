@@ -1,14 +1,18 @@
 <?php
+declare(strict_types=1);
 
 namespace NetglueMailTest;
 
+use NetglueMail\Factory\DispatcherFactory;
+use NetglueMail\ModuleOptions;
 use NetglueMail\TemplateService;
 use NetglueMail\Dispatcher;
+use Psr\Container\ContainerInterface;
+use Zend\EventManager\Event;
+use Zend\Mime\Message;
 use Zend\View\Renderer\PhpRenderer;
 use Zend\View\Model\ViewModel;
-use Zend\Mail\Transport\InMemory;
-use Zend\Mail\AddressList;
-use Zend\Mail\Address;
+use Zend\Mail;
 use Zend\EventManager\Test\EventListenerIntrospectionTrait;
 use Zend\EventManager\EventInterface;
 
@@ -16,62 +20,33 @@ class DispatcherTest extends TestCase
 {
     use EventListenerIntrospectionTrait;
 
-    public function getTemplateService()
+    /** @var Dispatcher */
+    private $dispatcher;
+
+    public function setUp()
     {
-        return self::$container->get(TemplateService::class);
+        parent::setUp();
+        $this->dispatcher = $this->container->get(Dispatcher::class);
     }
 
-    public function testDispatcherCanBeRetrievedFromContainer()
+    public function testFactory()
     {
-        $dispatcher = self::$container->get(Dispatcher::class);
+        $container = $this->prophesize(ContainerInterface::class);
+        $templates = $this->prophesize(TemplateService::class);
+        $container->get(ModuleOptions::class)->willReturn(new ModuleOptions([]));
+        $container->get(TemplateService::class)->willReturn($templates->reveal());
 
+        $factory = new DispatcherFactory();
+        $dispatcher = ($factory)($container->reveal());
         $this->assertInstanceOf(Dispatcher::class, $dispatcher);
-        $this->assertInstanceOf(TemplateService::class, $dispatcher->getTemplateService());
-        $this->assertInstanceOf(InMemory::class, $dispatcher->getTransport());
 
         return $dispatcher;
     }
 
-    /**
-     * @depends testDispatcherCanBeRetrievedFromContainer
-     */
-    public function testTransportCanBeOverridden(Dispatcher $dispatcher)
+    public function testCreateMessageReturnsExpectedMessage()
     {
-        $old = $dispatcher->getTransport();
-        $new = new InMemory;
-        $dispatcher->setTransport($new);
-        $this->assertSame($new, $dispatcher->getTransport());
-        return $dispatcher;
-    }
-
-    public function testAddressList()
-    {
-        $list = array(
-            'fred@example.com' => 'Fred',
-            'jane@example.com',
-        );
-
-        $addressList = new AddressList;
-        $addressList->addMany($list);
-        $this->assertTrue($addressList->has('fred@example.com'));
-        $this->assertTrue($addressList->has('jane@example.com'));
-
-        $email = 'Bill <bill@example.com>';
-        $addressList->addFromString($email);
-        $this->assertTrue($addressList->has('bill@example.com'));
-
-        $email = 'jim@example.com';
-        $addressList->addFromString($email);
-        $this->assertTrue($addressList->has('jim@example.com'));
-    }
-
-    /**
-     * @depends testDispatcherCanBeRetrievedFromContainer
-     */
-    public function testCreateMessageReturnsExpectedMessage(Dispatcher $dispatcher)
-    {
-        $msg = $dispatcher->createMessage('contactUs');
-        $this->assertInstanceOf('Zend\Mail\Message', $msg);
+        $msg = $this->dispatcher->createMessage('contactUs');
+        $this->assertInstanceOf(Mail\Message::class, $msg);
 
         $to = $msg->getTo();
         $this->assertTrue($to->has('bill@example.com'));
@@ -103,112 +78,98 @@ class DispatcherTest extends TestCase
         $address = $msg->getSender();
         $this->assertSame('sender@example.com', $address->getEmail());
         $this->assertSame('I Sent This', $address->getName());
-
     }
 
-    /**
-     * @depends testDispatcherCanBeRetrievedFromContainer
-     */
-    public function testSendMessage(Dispatcher $dispatcher)
+    public function testSendMessage()
     {
-        $transport = $dispatcher->getTransport();
-        $msg = $dispatcher->createMessage('contactUs');
-        $dispatcher->sendMessage($msg);
+        /** @var Mail\Transport\InMemory $transport */
+        $transport = $this->dispatcher->getTransport();
+        $this->assertInstanceOf(Mail\Transport\InMemory::class, $transport);
+        $msg = $this->dispatcher->createMessage('contactUs');
+        $this->dispatcher->sendMessage($msg);
         $this->assertSame($msg, $transport->getLastMessage());
     }
 
-    /**
-     * @depends testDispatcherCanBeRetrievedFromContainer
-     */
-    public function testViewVariablesInMessages(Dispatcher $dispatcher)
+    public function testViewVariablesInMessages()
     {
-        $transport = $dispatcher->getTransport();
-        $dispatcher->send('viewVariables', [], ['test' => 'This is a test']);
+        /** @var Mail\Transport\InMemory $transport */
+        $transport = $this->dispatcher->getTransport();
+        $this->dispatcher->send('viewVariables', [], ['test' => 'This is a test']);
         $message = $transport->getLastMessage();
         $body = $message->getBody();
+        $this->assertInstanceOf(Message::class, $body);
         $this->assertCount(1, $body->getParts());
         $text = current($body->getParts());
         $this->assertContains('This is a test', $text->getContent());
     }
 
-    /**
-     * @depends testDispatcherCanBeRetrievedFromContainer
-     */
-    public function testAttachments(Dispatcher $dispatcher)
+    public function testAttachments()
     {
-        $transport = $dispatcher->getTransport();
-        $dispatcher->send('viewVariables', [
-            'attachments' => array(
+        /** @var Mail\Transport\InMemory $transport */
+        $transport = $this->dispatcher->getTransport();
+        $this->dispatcher->send(
+            'viewVariables',
+            [
+            'attachments' => [
                 'TextFile.txt' => __DIR__ . '/../view/attachment.txt',
-            )], [
+            ]],
+            [
                 'test' => 'This is a test',
-            ]);
+            ]
+        );
         $message = $transport->getLastMessage();
         $body = $message->getBody();
         $parts = $body->getParts();
         $this->assertCount(2, $parts);
         $file = end($parts);
         $this->assertContains('Attachment Content', base64_decode($file->getContent()));
+        $this->assertSame('text/plain', $file->getType());
     }
 
-    /**
-     * @depends testDispatcherCanBeRetrievedFromContainer
-     */
-    public function testSendEventsAreTriggered(Dispatcher $dispatcher)
+    public function testSendEventsAreTriggered()
     {
-
-        $events = $dispatcher->getEventManager();
-        $events->attach('sendMessage', [$this, 'ensurePreSendEvent']);
-        $events->attach('sendMessage.post', [$this, 'ensurePostSendEvent']);
-        $dispatcher->send('viewVariables');
+        $sendFired = $postFired = false;
+        $events = $this->dispatcher->getEventManager();
+        $events->attach('sendMessage', function (Event $event) use (&$sendFired) {
+            $sendFired = true;
+            $this->assertSame('sendMessage', $event->getName());
+            $this->assertSame($this->dispatcher, $event->getTarget());
+            $this->assertInstanceOf(Mail\Message::class, $event->getParam('message'));
+        });
+        $events->attach('sendMessage.post', function (Event $event) use (&$postFired) {
+            $postFired = true;
+            $this->assertSame('sendMessage.post', $event->getName());
+            $this->assertSame($this->dispatcher, $event->getTarget());
+            $this->assertInstanceOf(Mail\Message::class, $event->getParam('message'));
+        });
+        $this->dispatcher->send('viewVariables');
+        $this->assertTrue($sendFired);
+        $this->assertTrue($postFired);
     }
 
-    public function ensurePreSendEvent(EventInterface $event)
-    {
-        $this->assertInstanceOf(Dispatcher::class, $event->getTarget());
-        $this->assertSame('sendMessage', $event->getName());
-        $params = $event->getParams();
-        $this->assertInstanceOf('Zend\Mail\Message', $params['message']);
-        $this->assertSame('viewVariables', $params['messageName']);
-    }
-
-    public function ensurePostSendEvent(EventInterface $event)
-    {
-        $this->assertSame('sendMessage.post', $event->getName());
-    }
-
-    /**
-     * @depends testDispatcherCanBeRetrievedFromContainer
-     */
-    public function testViewModelIsAcceptable(Dispatcher $dispatcher)
+    public function testViewModelIsAcceptable()
     {
         $id = uniqid('expect-this-');
         $viewModel = [
             'test' => $id,
         ];
-        $message = $dispatcher->send('viewVariables', [], $viewModel);
+        $message = $this->dispatcher->send('viewVariables', [], $viewModel);
         $body = $message->getBody();
         $text = current($body->getParts());
         $this->assertContains($id, $text->getContent());
     }
 
-    /**
-     * @depends testDispatcherCanBeRetrievedFromContainer
-     */
-    public function testDefaultSenderIsSet(Dispatcher $dispatcher)
+    public function testDefaultSenderIsSet()
     {
-        $msg = $dispatcher->createMessage('noSender');
+        $msg = $this->dispatcher->createMessage('noSender');
         $from = $msg->getFrom();
         $this->assertCount(1, $from);
         $this->assertTrue($from->has('me@example.com'));
     }
 
-    /**
-     * @depends testDispatcherCanBeRetrievedFromContainer
-     */
-    public function testDefaultSenderDoesNotOverrideFrom(Dispatcher $dispatcher)
+    public function testDefaultSenderDoesNotOverrideFrom()
     {
-        $msg = $dispatcher->createMessage('contactUs');
+        $msg = $this->dispatcher->createMessage('contactUs');
         $from = $msg->getFrom();
         $this->assertCount(1, $from);
         $this->assertFalse($from->has('me@example.com'));

@@ -1,202 +1,187 @@
 <?php
+declare(strict_types=1);
 
 namespace NetglueMail;
 
+use NetglueMail\Exception\InvalidArgumentException;
 use Zend\Stdlib\AbstractOptions;
 
 class ModuleOptions extends AbstractOptions
 {
-
     /**
-     * @var string Default Sender Name
+     *
+     * @var string|null
      */
     private $defaultSenderName;
 
     /**
-     * @var string Default Sender Email address
+     *
+     * @var string|null
      */
     private $defaultSender;
 
     /**
-     * Header set for every outbound message
+     *
      * @var array
      */
     private $defaultHeaders = [];
 
     /**
-     * Message configuration
+     *
      * @var array
      */
     private $messages = [];
 
     /**
-     * Default Layout Template
+     *
      * @var string|null
      */
     private $defaultLayout;
 
     /**
-     * Default Plain Text Layout Template
+     *
      * @var string|null
      */
     private $textLayout;
 
     /**
-     * Transport Name
+     *
      * @var string|null
      */
     private $transport;
 
-    /**
-     * @param string $name
-     * @return void
-     */
-    public function setDefaultSenderName($name)
+    /** @var string */
+    private $emptyLayoutTemplate = ConfigProvider::EMPTY_LAYOUT_TEMPLATE;
+
+    public function setDefaultSenderName(string $name) : void
     {
-        $name = empty($name) ? null : (string) $name;
+        $name = empty($name) ? null : $name;
         $this->defaultSenderName = $name;
     }
 
-    /**
-     * @return string|null
-     */
-    public function getDefaultSenderName()
+    public function getDefaultSenderName() :? string
     {
         return $this->defaultSenderName;
     }
 
-    /**
-     * @param string $email
-     * @return void
-     */
-    public function setDefaultSender($email)
+    public function setDefaultSender(string $email) : void
     {
         $email = trim(strtolower($email));
         $this->defaultSender = empty($email) ? null : $email;
     }
 
-    /**
-     * @return string|null
-     */
-    public function getDefaultSender()
+    public function getDefaultSender() :? string
     {
         return $this->defaultSender;
     }
 
-    /**
-     * @param array|Traversable $headers
-     * @return void
-     */
-    public function setDefaultHeaders($headers)
+    public function setDefaultHeaders(array $headers) : void
     {
         $this->defaultHeaders = $headers;
     }
 
-    /**
-     * @return array
-     */
-    public function getDefaultHeaders()
+    public function getDefaultHeaders() : array
     {
         return $this->defaultHeaders;
     }
 
-    public function setMessages($messages)
+    public function setMessages(array $messages) : void
     {
-        $this->messages = $messages;
+        $this->messages = [];
+        foreach ($messages as $name => $config) {
+            $this->addMessageConfig($name, $config);
+        }
     }
 
-    public function getMessages()
+    public function getMessages() : array
     {
         return $this->messages;
     }
 
+    private function addMessageConfig($name, $config) : void
+    {
+        if (! \is_string($name)) {
+            throw new InvalidArgumentException('Message configuration should be keyed with a string');
+        }
+        if (! is_array($config)) {
+            throw new InvalidArgumentException('Message configuration should be an array');
+        }
+        $this->messages[$name] = $config;
+    }
+
     /**
      * Return config for a specific message
-     * @param string $name
+     *
+     * @param  string $name
      * @return array|null
      */
-    public function getMessageConfig($name)
+    public function getMessageConfig(string $name) :? array
     {
         return isset($this->messages[$name]) ? $this->messages[$name] : null;
     }
 
     /**
      * Return the value of a specific message option
-     * @param string $messageName
-     * @param string $option
-     * @param mixed $default
+     *
+     * @param  string $messageName
+     * @param  string $option
+     * @param  mixed  $default
      * @return mixed
      */
-    public function getMessageOption($messageName, $option, $default = null)
+    public function getMessageOption(string $messageName, string $option, $default = null)
     {
-        if(!is_string($option)) {
-            throw new Exception\InvalidArgumentException('Option name must be a string');
+        $config = $this->getMessageConfig($messageName);
+        if ($config) {
+            return (isset($config[$option])) ? $config[$option] : $default;
         }
-        if ($config = $this->getMessageConfig($messageName)) {
-            if (isset($config[$option])) {
-                return $config[$option];
-            }
-        }
-
         return $default;
     }
 
-
-    /**
-     * Layout
-     * @param string $layout
-     * @return void
-     */
-    public function setDefaultLayout($layout)
+    public function setDefaultLayout(string $layout) : void
     {
-        $layout = empty($layout) ? null : (string) $layout;
+        $layout = empty($layout) ? null : $layout;
         $this->defaultLayout = $layout;
     }
 
-    /**
-     * @return string|null
-     */
-    public function getDefaultLayout()
+    public function getDefaultLayout() :? string
     {
         return $this->defaultLayout;
     }
 
-    /**
-     * Layout
-     * @param string $layout
-     * @return void
-     */
-    public function setTextLayout($layout)
+    public function setTextLayout(string $layout) : void
     {
-        $layout = empty($layout) ? null : (string) $layout;
+        $layout = empty($layout) ? null : $layout;
         $this->textLayout = $layout;
     }
 
-    /**
-     * @return string|null
-     */
-    public function getTextLayout()
+    public function getTextLayout() :? string
     {
         return $this->textLayout;
     }
 
-    /**
-     * Set transport name
-     * @param string $transport
-     * @return void
-     */
-    public function setTransport($transport)
+    public function setTransport(string $transport) : void
     {
-        $transport = empty($transport) ? null : (string) $transport;
+        $transport = empty($transport) ? null : $transport;
         $this->transport = $transport;
     }
 
     /**
      * Return transport name
+     *
      * @return string|null
      */
-    public function getTransport()
+    public function getTransport() :? string
     {
         return $this->transport;
+    }
+
+    public function setEmptyLayoutTemplate(string $templateName) : void
+    {
+        $this->emptyLayoutTemplate = $templateName;
+    }
+
+    public function getEmptyLayoutTemplate() : string
+    {
+        return $this->emptyLayoutTemplate;
     }
 }

@@ -1,5 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace NetglueMail\Exception;
 
-interface ExceptionInterface {}
+use Throwable;
+
+interface ExceptionInterface extends Throwable
+{
+}

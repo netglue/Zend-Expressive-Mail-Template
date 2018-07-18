@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace NetglueMail;
 
@@ -8,124 +9,100 @@ class TemplateService
 {
 
     /**
+     *
      * @var TemplateRendererInterface
      */
     private $renderer;
 
     /**
+     *
      * @var ModuleOptions
      */
     private $options;
 
-    /**
-     * Construct
-     * @param ModuleOptions             $options
-     * @param TemplateRendererInterface $renderer
-     */
     public function __construct(ModuleOptions $options, TemplateRendererInterface $renderer)
     {
         $this->options  = $options;
         $this->renderer = $renderer;
     }
 
-    /**
-     * Render the given message type with the given view model
-     * @param string $messageName
-     * @param array  $viewModel
-     * @return string
-     * @throws Exception\UnknownTemplateException if no template has been set
-     */
-    public function renderTemplate(string $messageName, array $viewModel = null)
+    public function renderTemplate(string $messageName, ?array $viewModel = null) :? string
     {
         $viewModel = (null === $viewModel) ? [] : $viewModel;
-        $tmpl = $this->getTemplateByName($messageName);
-        if (null === $tmpl) {
+        $template  = $this->getTemplateByName($messageName);
+        if (! $template) {
             return null;
         }
-        if ($layout = $this->getLayoutByName($messageName)) {
-            $viewModel['layout'] = $layout;
+        $layout = $this->getLayoutByName($messageName);
+        if (! $layout) {
+            $layout = $this->options->getEmptyLayoutTemplate();
         }
-        return $this->renderer->render($tmpl, $viewModel);
+        $viewModel['layout'] = $layout;
+        return $this->renderer->render($template, $viewModel);
     }
 
-    /**
-     * Render a plain-text template with the given name and model
-     * @param string $messageName
-     * @param array  $viewModel
-     * @return string
-     * @throws Exception\UnknownTemplateException if no template has been set
-     */
-    public function renderTextTemplate(string $messageName, array $viewModel = null)
+    public function renderTextTemplate(string $messageName, ?array $viewModel = null) :? string
     {
         $viewModel = (null === $viewModel) ? [] : $viewModel;
-        $tmpl = $this->getTextTemplateByName($messageName);
-        if (null === $tmpl) {
+        $template  = $this->getTextTemplateByName($messageName);
+        if (! $template) {
             return null;
         }
-        if ($layout = $this->getTextLayoutByName($messageName)) {
-            $viewModel['layout'] = $layout;
+        $layout = $this->getTextLayoutByName($messageName);
+        if (! $layout) {
+            $layout = $this->options->getEmptyLayoutTemplate();
         }
-        return $this->renderer->render($tmpl, $viewModel);
+        $viewModel['layout'] = $layout;
+        return $this->renderer->render($template, $viewModel);
     }
 
     /**
      * Return the layout template that should be used
-     * @param string $messageName
+     *
+     * @param  string $messageName
      * @return string|null
      */
-    public function getLayoutByName(string $messageName)
+    public function getLayoutByName(string $messageName) :? string
     {
         $layout = $this->options->getDefaultLayout();
-        return $this->options->getMessageOption($messageName, 'layout', $layout);
+        $layout = (string) $this->options->getMessageOption($messageName, 'layout', $layout);
+        return empty($layout) ? null : $layout;
     }
 
     /**
      * Return the layout template that should be used
-     * @param string $messageName
+     *
+     * @param  string $messageName
      * @return string|null
      */
-    public function getTextLayoutByName(string $messageName)
+    public function getTextLayoutByName(string $messageName) :? string
     {
         $layout = $this->options->getTextLayout();
-        return $this->options->getMessageOption($messageName, 'textLayout', $layout);
+        $layout = (string) $this->options->getMessageOption($messageName, 'textLayout', $layout);
+        return empty($layout) ? null : $layout;
     }
 
     /**
      * Return template name for specific message
-     * @param string $messageName
+     *
+     * @param  string $messageName
      * @return string|null
      */
-    public function getTemplateByName(string $messageName)
+    public function getTemplateByName(string $messageName) :? string
     {
-        return $this->options->getMessageOption($messageName, 'template');
+        $template = (string) $this->options->getMessageOption($messageName, 'template');
+        return empty($template) ? null : $template;
     }
-
 
     /**
      * Return text template name for specific message
-     * @param string $messageName
+     *
+     * @param  string $messageName
      * @return string|null
      */
-    public function getTextTemplateByName(string $messageName)
+    public function getTextTemplateByName(string $messageName) :? string
     {
-        return $this->options->getMessageOption($messageName, 'textTemplate');
+        $template = (string) $this->options->getMessageOption($messageName, 'textTemplate');
+        return empty($template) ? null : $template;
     }
-
-    /**
-     * @return ModuleOptions
-     */
-    public function getOptions()
-    {
-        return $this->options;
-    }
-
-    /**
-     * @return TemplateRendererInterface
-     */
-    public function getRenderer()
-    {
-        return $this->renderer;
-    }
-
-
 }

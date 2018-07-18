@@ -1,47 +1,35 @@
 <?php
+declare(strict_types=1);
 
 namespace NetglueMailTest;
 
-use NetglueMail\ConfigProvider;
-use Zend\ServiceManager\Config;
+use Psr\Container\ContainerInterface;
+use Zend\ConfigAggregator\ConfigAggregator;
+use Zend\ConfigAggregator\PhpFileProvider;
+use Zend\Expressive\ZendView;
 use Zend\ServiceManager\ServiceManager;
-use Zend\Expressive\ConfigManager\ConfigManager;
-use Zend\Expressive\ConfigManager\PhpFileProvider;
 
-
-class TestCase extends \PHPUnit_Framework_TestCase
+class TestCase extends \PHPUnit\Framework\TestCase
 {
+    /** @var ContainerInterface */
+    protected $container;
 
-    /**
-     * @var ContainerInterface
-     */
-    protected static $container;
-
-
-    public static function setUpBeforeClass()
+    public function setUp()
     {
-        $configManager = new ConfigManager([
-            ConfigProvider::class,
-            new PhpFileProvider(__DIR__ . '/../config/{{,*.}global,{,*.}local}.php'),
+        parent::setUp();
+        $config = $this->getModuleConfig();
+        $dependencies = $config['dependencies'];
+        $dependencies['services']['config'] = $config;
+        $this->container = new ServiceManager($dependencies);
+    }
+
+    protected function getModuleConfig() : array
+    {
+        $aggregator = new ConfigAggregator([
+            ZendView\ConfigProvider::class,
+            \NetglueMail\ConfigProvider::class,
+            new PhpFileProvider(realpath(__DIR__) . '/../config/config.global.php')
         ]);
-        $config = $configManager->getMergedConfig();
-        $config['debug']                = true;
-        $config['config_cache_enabled'] = false;
-
-        // Build container
-        $container = new ServiceManager();
-        (new Config($config['dependencies']))->configureServiceManager($container);
-
-        // Inject config
-        $container->setService('config', $config);
-
-        self::$container = $container;
+        return $aggregator->getMergedConfig();
     }
-
-    public static function tearDownAfterClass()
-    {
-        // Clean up
-        self::$container = null;
-    }
-
 }

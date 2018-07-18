@@ -1,6 +1,6 @@
 {
     "name": "netglue/zend-expressive-mail-template",
-    "description": "A module(?) that provides a way of easily configuring and sending email messages using existing templating engines available in Zend Expressive.",
+    "description": "A module that provides a way of easily configuring and sending email messages using existing templating engines available in Zend Expressive.",
     "type": "library",
     "keywords": [
         "zend",
@@ -12,15 +12,20 @@
     ],
     "homepage": "https://github.com/netglue/Zend-Expressive-Mail-Template",
     "require": {
-        "php" : "^7.0",
+        "php" : ">=7.1",
         "zendframework/zend-mail": "^2.7",
-        "zendframework/zend-eventmanager": "^2.6.2 || ^3.0"
+        "zendframework/zend-eventmanager": "^2.6.2 || ^3.0",
+        "psr/container": "^1.0",
+        "zendframework/zend-expressive-template": "^1 || ^2"
     },
     "require-dev" : {
-        "phpunit/phpunit" : "^5.0",
-        "zendframework/zend-expressive-zendviewrenderer": "^1.2",
+        "phpunit/phpunit" : "^7",
+        "zendframework/zend-expressive-zendviewrenderer": "^2",
         "zendframework/zend-escaper": "^2.5",
-        "mtymek/expressive-config-manager": "^0.4.0"
+        "squizlabs/php_codesniffer": "^3.3",
+        "zendframework/zend-config-aggregator": "^1.1",
+        "zendframework/zend-servicemanager": "^3",
+        "phpstan/phpstan": "^0.10.1"
     },
     "license": "MIT",
     "authors": [
@@ -39,7 +44,21 @@
             "NetglueMailTest\\": "test/NetglueMailTest"
         }
     },
+    "extra": {
+        "zf": {
+            "config-provider": "NetglueMail\\ConfigProvider"
+        }
+    },
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit",
+        "test-coverage": "phpunit --colors=always --coverage-html build/report",
+        "cs-check": "phpcs",
+        "cs-fix": "phpcbf",
+        "check" : [
+            "@cs-check",
+            "@test",
+            "@check-phpstan"
+        ],
+        "check-phpstan": "phpstan analyse --level max src"
     }
 }
