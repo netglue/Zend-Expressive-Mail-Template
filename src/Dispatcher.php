@@ -267,4 +267,9 @@ class Dispatcher implements EventsCapableInterface, EventManagerAwareInterface
 
         return $part;
     }
+
+    public function getTransport() : TransportInterface
+    {
+        return $this->transport;
+    }
 }
