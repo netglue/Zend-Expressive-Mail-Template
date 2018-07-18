@@ -34,9 +34,10 @@ class TemplateService
             return null;
         }
         $layout = $this->getLayoutByName($messageName);
-        if ($layout) {
-            $viewModel['layout'] = $layout;
+        if (! $layout) {
+            $layout = $this->options->getEmptyLayoutTemplate();
         }
+        $viewModel['layout'] = $layout;
         return $this->renderer->render($template, $viewModel);
     }
 
@@ -48,9 +49,10 @@ class TemplateService
             return null;
         }
         $layout = $this->getTextLayoutByName($messageName);
-        if ($layout) {
-            $viewModel['layout'] = $layout;
+        if (! $layout) {
+            $layout = $this->options->getEmptyLayoutTemplate();
         }
+        $viewModel['layout'] = $layout;
         return $this->renderer->render($template, $viewModel);
     }
 

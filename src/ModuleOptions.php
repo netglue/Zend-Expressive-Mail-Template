@@ -50,6 +50,9 @@ class ModuleOptions extends AbstractOptions
      */
     private $transport;
 
+    /** @var string */
+    private $emptyLayoutTemplate = ConfigProvider::EMPTY_LAYOUT_TEMPLATE;
+
     public function setDefaultSenderName(string $name) : void
     {
         $name = empty($name) ? null : $name;
@@ -170,5 +173,15 @@ class ModuleOptions extends AbstractOptions
     public function getTransport() :? string
     {
         return $this->transport;
+    }
+
+    public function setEmptyLayoutTemplate(string $templateName) : void
+    {
+        $this->emptyLayoutTemplate = $templateName;
+    }
+
+    public function getEmptyLayoutTemplate() : string
+    {
+        return $this->emptyLayoutTemplate;
     }
 }
