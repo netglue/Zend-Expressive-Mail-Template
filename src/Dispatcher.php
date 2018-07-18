@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace NetglueMail;
 
+use NetglueMail\Exception\InvalidArgumentException;
 use Zend\EventManager\EventManagerAwareInterface;
 use Zend\EventManager\EventManagerAwareTrait;
 use Zend\EventManager\EventsCapableInterface;
@@ -178,43 +179,72 @@ class Dispatcher implements EventsCapableInterface, EventManagerAwareInterface
         if ($sender instanceof Mail\Address\AddressInterface && isset($options['senderName'])) {
             $message->setSender(new Mail\Address($sender->getEmail(), $options['senderName']));
         }
-        $this->addAttachments($message, $options);
 
+        $attachments = isset($options['attachments']) ? $options['attachments'] : [];
+        if (count($attachments)) {
+            $this->addAttachments($options['body'], $attachments);
+        }
         return $message;
     }
 
     /**
-     * Add any attachments
+     * Add attachments to a mime body from an array
      *
-     * @param  Mail\Message $message
-     * @param  array        $options
+     * @param Mime\Message $body
+     * @param array        $attachments
      * @return void
      */
-    private function addAttachments(Mail\Message $message, array $options)
+    private function addAttachments(Mime\Message $body, array $attachments) : void
     {
-        if (isset($options['attachments'])) {
-            foreach ($options['attachments'] as $name => $attachmentPath) {
-                $fileContent = fopen($attachmentPath, 'r');
-                $attachment = new Mime\Part($fileContent);
-                $attachment->filename = $name;
-                $attachment->type = $this->getMimeType($attachmentPath);
-                $attachment->disposition = Mime\Mime::DISPOSITION_ATTACHMENT;
-                $attachment->encoding    = Mime\Mime::ENCODING_BASE64;
-                $message->getBody()->addPart($attachment);
-            }
+        foreach ($attachments as $name => $attachmentPath) {
+            $this->assertViableAttachment($name, $attachmentPath);
+            $fileContent = fopen($attachmentPath, 'r');
+            $attachment = new Mime\Part($fileContent);
+            $attachment->filename = $name;
+            $attachment->type = $this->getMimeType($attachmentPath);
+            $attachment->disposition = Mime\Mime::DISPOSITION_ATTACHMENT;
+            $attachment->encoding    = Mime\Mime::ENCODING_BASE64;
+            $body->addPart($attachment);
+        }
+    }
+
+    private function assertViableAttachment($name, $path)
+    {
+        if (! \is_string($name)) {
+            throw new InvalidArgumentException(sprintf(
+                'Attachment filename must be a string. Received %s',
+                gettype($name)
+            ));
+        }
+        if (! \is_string($path)) {
+            throw new InvalidArgumentException(sprintf(
+                'Attachment path must be a string. Received %s',
+                gettype($path)
+            ));
+        }
+        if (! \file_exists($path)) {
+            throw new InvalidArgumentException(sprintf(
+                'The attachment %s cannot be located on disk',
+                $path
+            ));
+        }
+        if (! \is_readable($path)) {
+            throw new InvalidArgumentException(sprintf(
+                'The attachment %s cannot be read',
+                $path
+            ));
         }
     }
 
     /**
-     * Find mimetype of specified file
+     * Find mime-type of specified file
      *
      * @param  string $filePath
      * @return mixed
      */
-    private function getMimeType($filePath)
+    private function getMimeType(string $filePath)
     {
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        return finfo_file($finfo, $filePath);
+        return mime_content_type($filePath);
     }
 
     /**
