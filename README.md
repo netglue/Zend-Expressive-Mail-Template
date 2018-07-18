@@ -1,5 +1,7 @@
 # Sending template based emails in a Zend Expressive app
 
+[![Build Status](https://travis-ci.org/netglue/Zend-Expressive-Mail-Template.svg?branch=master)](https://travis-ci.org/netglue/Zend-Expressive-Mail-Template)
+
 This module/library/whatever is probably a bit naïve and is effectively a quick refactor of an older ZF2 module that does the same thing but more specifically with `Zend\View` - you can find that here: [netglue/ZF2-Mail-Template-Module](https://github.com/netglue/ZF2-Mail-Template-Module)…
 
 The main use case for this library is where you’ll construct email message layouts and templates and store them on the local filesystem as you would for the frontend of your app/website. These templates will then be rendered using whatever templating engine you've already got setup in your zend expressive app.
