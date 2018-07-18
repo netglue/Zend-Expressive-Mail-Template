@@ -174,10 +174,10 @@ class Dispatcher implements EventsCapableInterface, EventManagerAwareInterface
 
         $message = Mail\MessageFactory::getInstance($message);
         // Name of Sender will not be set as there is no way of doing this via the MessageFactory
-        if ($message->getSender() && isset($options['senderName'])) {
-            $message->setSender(new Mail\Address($message->getSender()->getEmail(), $options['senderName']));
+        $sender = $message->getSender();
+        if ($sender instanceof Mail\Address\AddressInterface && isset($options['senderName'])) {
+            $message->setSender(new Mail\Address($sender->getEmail(), $options['senderName']));
         }
-
         $this->addAttachments($message, $options);
 
         return $message;
