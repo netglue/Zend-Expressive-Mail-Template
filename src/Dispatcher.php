@@ -62,7 +62,9 @@ class Dispatcher implements EventsCapableInterface, EventManagerAwareInterface
         $charset = isset($options['charset']) ? $options['charset'] : 'utf-8';
         $mimeBody = $this->createMimeBody($html, $text, $charset);
 
-        $options = array_merge($this->options->getMessageConfig($messageName), $options);
+        $config = $this->options->getMessageConfig($messageName);
+        $config = $config ? $config : [];
+        $options = array_merge($config, $options);
         $options['body'] = $mimeBody;
 
         $message = $this->prepareMessage($options);
